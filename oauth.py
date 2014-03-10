@@ -48,7 +48,7 @@ from google.appengine.api import urlfetch
 from google.appengine.ext import db
 
 from cgi import parse_qs
-from django.utils import simplejson as json
+import json
 from hashlib import sha1
 from hmac import new as hmac
 from random import getrandbits
@@ -434,19 +434,20 @@ class TwitterClient(OAuthClient):
     Lookup the user on Twitter.
     """
     
-    response = self.make_request(
-        "http://twitter.com/account/verify_credentials.json",
-        token=access_token, secret=access_secret, protected=True)
+    #response = self.make_request(
+        #"http://twitter.com/account/verify_credentials.json",
+        #token=access_token, secret=access_secret, protected=True)
 
-    data = json.loads(response.content)
+    #data = json.loads(response.content)
 
-    user_info = self._get_default_user_info()
-    user_info["id"] = data["id"]
-    user_info["username"] = data["screen_name"]
-    user_info["name"] = data["name"]
-    user_info["picture"] = data["profile_image_url"]
+    #user_info = self._get_default_user_info()
+    #user_info["id"] = data["id"]
+    #user_info["username"] = data["screen_name"]
+    #user_info["name"] = data["name"]
+    #user_info["picture"] = data["profile_image_url"]
 
-    return user_info
+    #return user_info
+    pass
     
 
 class MySpaceClient(OAuthClient):

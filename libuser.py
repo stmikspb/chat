@@ -4,7 +4,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 from google.appengine.api import channel
 from google.appengine.api import memcache
-from django.utils import simplejson
+import json as simplejson
 import re
 import datetime
 import string
