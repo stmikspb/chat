@@ -2,7 +2,7 @@ from google.appengine.ext import db
 import re
 from urlparse import urlparse
 from google.appengine.ext.webapp import template
-from django.utils import simplejson
+import json
 from google.appengine.api import channel
 
 
@@ -326,7 +326,7 @@ def chatlist(archive = False):
                   'return_type' : 'chatlist',
                   'data' : output
                   }
-    chats_json = simplejson.dumps(chatUpdate)
+    chats_json = json.dumps(chatUpdate)
 
     import libuser
     users = libuser.getAliveUsers()

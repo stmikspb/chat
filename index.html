@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>GDI Shoutbox</title>
+        <title>STMIK SPB Chat</title>
         <link rel="SHORTCUT ICON" href="/favicon.ico">
         <script type="text/javascript" src="/_ah/channel/jsapi"></script>
         <script language="javascript" type="text/javascript" src="/res/jquery.js"></script>
@@ -24,7 +24,7 @@
             .chatbox {
                 background: #3b3b3b url('/res/strip_back.gif') repeat-x top left;
                 overflow: auto;
-                height: 172px;
+                height: 472px;
                 width: 100%;
             }        
             .pdate {
@@ -177,13 +177,12 @@
                         var btnSubmit = $("#frmChatMsg").find("#submit");
                         txtMsg.attr('disabled',true);
                         btnSubmit.attr('disabled',true);
-                        btnSubmit.attr('value','Sending...');										
-                        if(txtMsg.attr('value')!=""){																
-                            var msg = txtMsg.attr('value');											
-                            var xhr = new XMLHttpRequest();
-                            xhr.open('POST', '/chatpost?message=' + encodeURIComponent(msg), true);
-                            xhr.send();		 
-                        }																					
+                        btnSubmit.attr('value','Sending...');
+                        if(txtMsg.attr('value')!=""){
+                            $.post('/chatpost?message=' + encodeURIComponent(txtMsg.val()), function(data){
+                                $.post('/chatpost?message=', {});
+                            });
+                        }
                     });
                     $("body").find("#btn_emo").click(function(e){
                         $("#msg").insertAtCaret($(this).attr('code'));
@@ -199,20 +198,11 @@
         
         <div class='chat_main_title'>
             Shoutbox&nbsp;
-            {% comment %}
             {% ifequal new_nickname "__anonymous" %}
-            {% endcomment %}
-                <div style="float:right;">
-                <fb:login-button autologoutlink="true"></fb:login-button>
-            </div>
-                {% comment %}
-                |&nbsp;<a href="/login">Join Chat</a>
-                {% else %}
-                |&nbsp;<a href="/logout">Exit Chat</a><br />
-                {% endcomment %}
-                {%comment %}
+                |&nbsp;<a href="{{login_url}}">Join Chat</a>
+            {% else %}
+                <!--|&nbsp;<a href="/logout">Exit Chat</a><br />-->
             {% endifequal %}
-            {% endcomment %}
         </div>
         
         <table width='100%' border='0' cellspacing='2' cellpadding='2' class='chat_main_box'>
@@ -240,24 +230,21 @@
                 </div>
             </form>
         {% endifnotequal %}
+        <div style='padding:20px;'>
+            <p>
+            <h1>Selamat datang di chat STMIK SPB Airlangga Samarinda</h1>
+            <ol>
+                <li>Ini adalah demo <a href='https://developers.google.com/appengine/' target='_blank'>Google App Engine</a> dan model aplikasi menggunakan <a href='http://en.wikipedia.org/wiki/Comet_(programming)' target='_blank'>Comet</a></li>
+                <li>Klik Join Chat untuk masuk ke chat (perlu login menggunakan gmail)</li>
+                <li>Ketik pesan di kolom shout dan klik tombol Shout atau tekan Enter</li>
+                <li>Emoticons bisa diakses dari tombol Smilies</li>
+                <li>Source code bisa diakses di <a href='https://github.com/stmikspb/chat' target='_blank'>Github STMIK SPB</a></a>
+
+            </ol>
+
+            </p>
+        </div>
     
-    <div id="fb-root"></div>
-    <script>
-      window.fbAsyncInit = function() {
-        FB.init({appId: '{{ facebook_app_id }}', status: true, cookie: true,
-                 xfbml: true});
-        FB.Event.subscribe('{% if current_user %}auth.logout{% else %}auth.login{% endif %}', function(response) {
-          window.location.reload();
-        });
-      };
-      (function() {
-        var e = document.createElement('script');
-        e.type = 'text/javascript';
-        e.src = document.location.protocol + '//connect.facebook.net/en_US/all.js';
-        e.async = true;
-        document.getElementById('fb-root').appendChild(e);
-      }());
-    </script>
     </body>
 </html>
 

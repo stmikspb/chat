@@ -3,21 +3,13 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
-from google.appengine.api import channel
-from django.utils import simplejson
-import re
-import datetime
-import string
-import oauth
-import urllib
-from urlparse import urlparse
+from google.appengine.api import users
 
 import libchat
 import libuser
 
 import facebook
 import os.path
-import wsgiref.handlers
 
 
 
@@ -27,15 +19,15 @@ application_key = "WLdDqBExrTh7QRrbRNSBvA"
 application_secret = "mjcpGlsArr1oqd0GxNeh1kQuzyBn3I7GwPmHIME"
 user_token = "FILL_IN"
 user_secret = "FILL_IN"
-#host = "http://localhost:9005"
-host = "http://gdishoutbox.appspot.com"
+#host = "http://localhost:8080"
+host = "http://stmikspbchat.appspot.com"
 callback = "%s/verify" % host
 
 #todo: setiap ping, atau buat ping baru dengan interval yg lebih besar (tiap 5 menit misalnya)
-#di tiap ping tsb, cek new thread/reply di gdi, dari rss mungkin, klo ada yg baru, broadcast
+#di tiap ping tsb, cek new thread/reply di stmikspbchat, dari rss mungkin, klo ada yg baru, broadcast
 
 #pindah ke latest oauth
-#support login via yahoo, gdi-acc, (fb?)
+#support login via yahoo, stmikspbchat-acc, (fb?)
 #di db ActiveUsers tambah field "acc_type" (twitter, yahoo, etc)
 #di tiap msg chatlist, kasih icon disebelah username, icon acc_type (twitter,yahoo, etc)
 #di daftar online user, kasih icon acc_type jg
@@ -45,8 +37,8 @@ callback = "%s/verify" % host
 #dropdown buat pengganti msg textfield, jadi past chat bisa dipilih lagi
 
 #public todo:
-#tiap ada reply/post baru di gdi, broadcast linknya ke chat (kayak fb newsfeed)
-#bisa login pake yahoo,fb(?), dan gdi-account.appspot.com,tiap ngechat bisa keliatan loginnya pakai apa (ada icon service, kecil disebelah kiri/kanan username)
+#tiap ada reply/post baru di stmikspbchat, broadcast linknya ke chat (kayak fb newsfeed)
+#bisa login pake yahoo,fb(?), dan stmikspbchat-account.appspot.com,tiap ngechat bisa keliatan loginnya pakai apa (ada icon service, kecil disebelah kiri/kanan username)
 #bisa ngepost ke status (yahoo,twitter,fb(?)) pake command /post
 FACEBOOK_APP_ID = "295375653836119"
 FACEBOOK_APP_SECRET = "c7825cfedfeba3b48c5672d7c8bee5b8"
@@ -115,13 +107,10 @@ class ListAliveUsers(webapp.RequestHandler):
 
 class ChatPost(BaseHandler):
     def post(self):
-        args = dict(current_user=self.current_user,
-                facebook_app_id=FACEBOOK_APP_ID)
-        #client = oauth.GDIClient(application_key, application_secret, callback, self)
-        #if client.get_cookie():
-        if args['current_user'] is not None:
+        user = users.get_current_user()
+        if user:
             if self.request.get('message') != "":
-                username = args['current_user'].name
+                username = user.nickname()
                 libchat.postChat(username, self.request.get('message'))
         libchat.chatlist()
 class ChatArchive(webapp.RequestHandler):
@@ -137,7 +126,7 @@ class ChatExit(BaseHandler):
         #username = client.get_cookie_username()
         username = args['current_user'].name
         libuser.logout(username)
-        libchat.postSystemChat(username + " left the chat (log out via GDI Account)")
+        libchat.postSystemChat(username + " left the chat")
         #client.expire_cookie()
         return self.redirect("/")
 
@@ -149,29 +138,13 @@ class IFrameSample(webapp.RequestHandler):
 
 class MainPage(BaseHandler):
     def get(self):
-
-        args = dict(current_user=self.current_user,
-                facebook_app_id=FACEBOOK_APP_ID)
-        #client = pythontwitter.OAuthClient('twitter', self)       
-        #client = oauth.GDIClient(application_key, application_secret, callback, self)
-        #if mode == "login":
-            #return self.redirect(client.get_authorization_url())
-        #if mode == "verify":
-            #auth_token = self.request.get("oauth_token")
-            #auth_verifier = self.request.get("oauth_verifier")
-            #user_info = client.get_user_info(auth_token, auth_verifier = auth_verifier)
-            #return self.redirect("/")
-
-        nickname = ""
-        new_token = ""
-        #if client.get_cookie():
-        if args['current_user']:
-            #info = client.get('/account/verify_credentials')
-            #nickname = info['screen_name']
-            #nickname = client.get_cookie_username()
-            nickname = args['current_user'].name 
+        user = users.get_current_user()
+        login_url = None
+        if user:
+            nickname = user.nickname()
         else:
             nickname = "__anonymous"
+            login_url = users.create_login_url()
         new_token = libuser.join(nickname)
 
 
@@ -196,7 +169,7 @@ class MainPage(BaseHandler):
 
 
 
-        output = template.render('index.html', {'new_nickname' : nickname, 'new_token' : new_token, 'arr_emo' : libchat.arr_emo, 'facebook_app_id' : FACEBOOK_APP_ID})
+        output = template.render('index.html', {'login_url': login_url, 'new_nickname' : nickname, 'new_token' : new_token, 'arr_emo' : libchat.arr_emo, 'facebook_app_id' : FACEBOOK_APP_ID})
         self.response.headers['Access-Control-Allow-Origin'] = '*'
 
         self.response.out.write(output)

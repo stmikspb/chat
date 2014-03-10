@@ -4,7 +4,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 from google.appengine.api import channel
 from google.appengine.api import memcache
-from django.utils import simplejson
+import json
 import re
 import datetime
 import string
@@ -97,7 +97,7 @@ def listAliveUsers(users = None):
                     'return_type' : 'userlist',
                     'data' : output
                     }
-    users_json = simplejson.dumps(output_users)
+    users_json = json.dumps(output_users)
     for user in users:        
         client_id = user['client_id']# later change this to client id                    
         try:
