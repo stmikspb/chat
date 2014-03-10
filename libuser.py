@@ -4,7 +4,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 from google.appengine.api import channel
 from google.appengine.api import memcache
-import json as simplejson
+from django.utils import simplejson
 import re
 import datetime
 import string
@@ -116,12 +116,13 @@ def cronUpdateAliveUsers():
             usr_ch_count = len(getAliveUsersSpecific(users,username=user['username']))
             if user['username'] != "__anonymous":
                 if usr_ch_count == 1:
-                    
+                    """
                     chat = libchat.ChatData()
-                    chat.usr = ''
+                    chat.usr = '__system'
                     chat.msg = user['username'] + " left the chat (request timed out)"
                     chat.date = user['last_updated']
-                    chat.put()                    
+                    chat.put()
+                    """                    
             users.remove(user)
     if changes == True:
         writeAliveUsers(users) # later, if no changes, don't perform this task

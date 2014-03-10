@@ -5,13 +5,11 @@
 </style>
 
 {% for chat in chats %}
+{% ifnotequal chat.usr "OMBONDI" %}
     <div class="chat_entry">
-        {% ifequal chat.usr "" %}
-            <small><i>{{ chat.msg }}</i></small> <span id="pdate" class='pdate'>{{ chat.date }}</span>
-        {% else %}        
             <span id="pdate" class='pdate'>{{ chat.date }}</span> 
             <b><a href='#'>{{ chat.usr }}</a></b> 
-            {{ chat.msg }}
-        {% endifequal %}
+            {{ chat.msg }}       
     </div>
+{% endifnotequal %}
 {% endfor %}

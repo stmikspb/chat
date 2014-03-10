@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>stmikspbchat</title>
+        <title>GDI Shoutbox</title>
         <link rel="SHORTCUT ICON" href="/favicon.ico">
         <script type="text/javascript" src="/_ah/channel/jsapi"></script>
         <script language="javascript" type="text/javascript" src="/res/jquery.js"></script>
@@ -13,6 +13,8 @@
         <style type="text/css">
             body {
                 background-color: #191919;
+                margin:0px;
+                padding:0px;
             }        
             body,div,tr,td {
                 font-family: Verdana, Tahoma, Helvetica, Arial;
@@ -197,11 +199,20 @@
         
         <div class='chat_main_title'>
             Shoutbox&nbsp;
+            {% comment %}
             {% ifequal new_nickname "__anonymous" %}
+            {% endcomment %}
+                <div style="float:right;">
+                <fb:login-button autologoutlink="true"></fb:login-button>
+            </div>
+                {% comment %}
                 |&nbsp;<a href="/login">Join Chat</a>
                 {% else %}
                 |&nbsp;<a href="/logout">Exit Chat</a><br />
+                {% endcomment %}
+                {%comment %}
             {% endifequal %}
+            {% endcomment %}
         </div>
         
         <table width='100%' border='0' cellspacing='2' cellpadding='2' class='chat_main_box'>
@@ -230,6 +241,23 @@
             </form>
         {% endifnotequal %}
     
+    <div id="fb-root"></div>
+    <script>
+      window.fbAsyncInit = function() {
+        FB.init({appId: '{{ facebook_app_id }}', status: true, cookie: true,
+                 xfbml: true});
+        FB.Event.subscribe('{% if current_user %}auth.logout{% else %}auth.login{% endif %}', function(response) {
+          window.location.reload();
+        });
+      };
+      (function() {
+        var e = document.createElement('script');
+        e.type = 'text/javascript';
+        e.src = document.location.protocol + '//connect.facebook.net/en_US/all.js';
+        e.async = true;
+        document.getElementById('fb-root').appendChild(e);
+      }());
+    </script>
     </body>
 </html>
 

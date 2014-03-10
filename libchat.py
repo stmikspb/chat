@@ -2,7 +2,7 @@ from google.appengine.ext import db
 import re
 from urlparse import urlparse
 from google.appengine.ext.webapp import template
-import json as simplejson
+from django.utils import simplejson
 from google.appengine.api import channel
 
 
@@ -50,7 +50,6 @@ addEmo(':smile:', 'icon_smile')
 addEmo(':nangis:', 'nangis')
 addEmo('=P~', 'eusa_drool')
 addEmo(':x', 'icon_mad')
-addEmo(':-p', 'y_10')
 addEmo('=;', 'eusa_hand')
 addEmo(':!:', 'icon_exclaim')
 addEmo(':-\"', 'siul')
@@ -221,12 +220,13 @@ class ChatData(db.Model):
     msg = db.TextProperty()
     date = db.DateTimeProperty(auto_now_add = True)
 
-def postSystemChat(message):
+def postSystemChat(message):	
     chat = ChatData()
-    chat.usr = ''
-    chat.msg = message
-    chat.put()
-    chatlist()
+    #chat.usr = '__system'
+    #chat.msg = message
+    #chat.put()
+    #chatlist()
+    
     return
 def processMsg( usr, msg, fdate):
     msg += " "
@@ -301,11 +301,12 @@ def processMsg( usr, msg, fdate):
     	scheme = word.__getattribute__('scheme');
     	if scheme == "http" or scheme == "https":
 	            url_caption = word.geturl()
-	            url_caption = url_caption.replace("http://", " ", 1)
-	            url_caption = url_caption.replace("https://", " ", 1)
-	            msg += " " + "<a href='" + word.geturl() + "'>" + url_caption + "</a>"
+	            #url_caption = url_caption.replace("http://", " ", 1)
+	            #url_caption = url_caption.replace("https://", " ", 1)
+	            msg += " " + "<a href='" + word.geturl() + "' target='_blank'>" + url_caption + "</a>"
         else:
             msg += " " + m
+
 
     return {'usr':usr, 'msg':msg, 'date':fdate}
 def chatlist(archive = False):
@@ -316,9 +317,9 @@ def chatlist(archive = False):
     chats = [];
     for c in chats_data:
         fdate = c.date.strftime("%m %d,%Y %H:%M:%S")
-        chats.append(processMsg(c.usr, c.msg, fdate))
+        chats.append(processMsg(c.usr.split(' ')[0], c.msg, fdate))
 
-    output = template.render('chatlist.html', {'chats' : chats})
+    output = template.render('chatlist.html', {'chats' : chats}).decode('utf-8')
     if archive == True:
         return output
     chatUpdate = {

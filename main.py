@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 from google.appengine.ext.webapp import template
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 from google.appengine.api import channel
-import json as simplejson
+from django.utils import simplejson
 import re
 import datetime
 import string
@@ -14,17 +15,27 @@ from urlparse import urlparse
 import libchat
 import libuser
 
+import facebook
+import os.path
+import wsgiref.handlers
+
+
+
+
+
 application_key = "WLdDqBExrTh7QRrbRNSBvA"
 application_secret = "mjcpGlsArr1oqd0GxNeh1kQuzyBn3I7GwPmHIME"
 user_token = "FILL_IN"
 user_secret = "FILL_IN"
 #host = "http://localhost:9005"
-host = "http://stmikspbchat.appspot.com"
+host = "http://gdishoutbox.appspot.com"
 callback = "%s/verify" % host
 
+#todo: setiap ping, atau buat ping baru dengan interval yg lebih besar (tiap 5 menit misalnya)
+#di tiap ping tsb, cek new thread/reply di gdi, dari rss mungkin, klo ada yg baru, broadcast
 
 #pindah ke latest oauth
-#support login via yahoo, (fb?)
+#support login via yahoo, gdi-acc, (fb?)
 #di db ActiveUsers tambah field "acc_type" (twitter, yahoo, etc)
 #di tiap msg chatlist, kasih icon disebelah username, icon acc_type (twitter,yahoo, etc)
 #di daftar online user, kasih icon acc_type jg
@@ -34,9 +45,60 @@ callback = "%s/verify" % host
 #dropdown buat pengganti msg textfield, jadi past chat bisa dipilih lagi
 
 #public todo:
-#bisa login pake yahoo,fb(?), tiap ngechat bisa keliatan loginnya pakai apa (ada icon service, kecil disebelah kiri/kanan username)
+#tiap ada reply/post baru di gdi, broadcast linknya ke chat (kayak fb newsfeed)
+#bisa login pake yahoo,fb(?), dan gdi-account.appspot.com,tiap ngechat bisa keliatan loginnya pakai apa (ada icon service, kecil disebelah kiri/kanan username)
 #bisa ngepost ke status (yahoo,twitter,fb(?)) pake command /post
+FACEBOOK_APP_ID = "295375653836119"
+FACEBOOK_APP_SECRET = "c7825cfedfeba3b48c5672d7c8bee5b8"
 
+class User(db.Model):
+    id = db.StringProperty(required=True)
+    created = db.DateTimeProperty(auto_now_add=True)
+    updated = db.DateTimeProperty(auto_now=True)
+    name = db.StringProperty(required=True)
+    profile_url = db.StringProperty(required=True)
+    access_token = db.StringProperty(required=True)
+class BaseHandler(webapp.RequestHandler):
+    """Provides access to the active Facebook user in self.current_user
+
+    The property is lazy-loaded on first access, using the cookie saved
+    by the Facebook JavaScript SDK to determine the user ID of the active
+    user. See http://developers.facebook.com/docs/authentication/ for
+    more information.
+    """
+    @property
+    def current_user(self):
+        if not hasattr(self, "_current_user"):
+            self._current_user = None
+            cookie = facebook.get_user_from_cookie(
+                    self.request.cookies, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
+            if cookie:
+                # Store a local instance of the user data so we don't need
+                # a round-trip to Facebook on every request
+                user = User.get_by_key_name(cookie["uid"])
+                if not user:
+                    graph = facebook.GraphAPI(cookie["access_token"])
+                    profile = graph.get_object("me")
+                    user = User(key_name=str(profile["id"]),
+                            id=str(profile["id"]),
+                            name=profile["name"],
+                            profile_url=profile["link"],
+                            access_token=cookie["access_token"])
+                    user.put()
+                elif user.access_token != cookie["access_token"]:
+                    user.access_token = cookie["access_token"]
+                    user.put()
+                self._current_user = user
+        return self._current_user
+
+
+class HomeHandler(BaseHandler):
+    def get(self):
+        path = os.path.join(os.path.dirname(__file__), "example.html")
+        args = dict(current_user=self.current_user,
+                facebook_app_id=FACEBOOK_APP_ID)
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
+        self.response.out.write(template.render(path, args))
 
 class ClientPing(webapp.RequestHandler):
     def post(self):
@@ -51,57 +113,68 @@ class ListAliveUsers(webapp.RequestHandler):
     def get(self):
         libuser.listAliveUsers()
 
-class ChatPost(webapp.RequestHandler):
+class ChatPost(BaseHandler):
     def post(self):
-        client = oauth.GDIClient(application_key, application_secret, callback, self)
-        if client.get_cookie():
+        args = dict(current_user=self.current_user,
+                facebook_app_id=FACEBOOK_APP_ID)
+        #client = oauth.GDIClient(application_key, application_secret, callback, self)
+        #if client.get_cookie():
+        if args['current_user'] is not None:
             if self.request.get('message') != "":
-                username = client.get_cookie_username()
+                username = args['current_user'].name
                 libchat.postChat(username, self.request.get('message'))
         libchat.chatlist()
 class ChatArchive(webapp.RequestHandler):
-    def get(self):        
+    def get(self):
+        self.response.headers['Access-Control-Allow-Origin'] = '*'        
         self.response.out.write(libchat.chatlist(True))
 
-class ChatExit(webapp.RequestHandler):
+class ChatExit(BaseHandler):
     def get(self):
-        client = oauth.GDIClient(application_key, application_secret, callback, self)
-        username = client.get_cookie_username()
+        args = dict(current_user=self.current_user,
+                facebook_app_id=FACEBOOK_APP_ID)
+        #client = oauth.GDIClient(application_key, application_secret, callback, self)
+        #username = client.get_cookie_username()
+        username = args['current_user'].name
         libuser.logout(username)
         libchat.postSystemChat(username + " left the chat (log out via GDI Account)")
-        client.expire_cookie()
+        #client.expire_cookie()
         return self.redirect("/")
-        
+
 class IFrameSample(webapp.RequestHandler):
     def get(self):
         output = template.render('iframesample.html', {'host':host})
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.out.write(output)
-        
-class MainPage(webapp.RequestHandler):
-    def get(self, mode = ""):
 
+class MainPage(BaseHandler):
+    def get(self):
+
+        args = dict(current_user=self.current_user,
+                facebook_app_id=FACEBOOK_APP_ID)
         #client = pythontwitter.OAuthClient('twitter', self)       
-        client = oauth.GDIClient(application_key, application_secret, callback, self)
-        if mode == "login":
-            return self.redirect(client.get_authorization_url())
-        if mode == "verify":
-            auth_token = self.request.get("oauth_token")
-            auth_verifier = self.request.get("oauth_verifier")
-            user_info = client.get_user_info(auth_token, auth_verifier = auth_verifier)
-            return self.redirect("/")
+        #client = oauth.GDIClient(application_key, application_secret, callback, self)
+        #if mode == "login":
+            #return self.redirect(client.get_authorization_url())
+        #if mode == "verify":
+            #auth_token = self.request.get("oauth_token")
+            #auth_verifier = self.request.get("oauth_verifier")
+            #user_info = client.get_user_info(auth_token, auth_verifier = auth_verifier)
+            #return self.redirect("/")
 
         nickname = ""
         new_token = ""
-        if client.get_cookie():
+        #if client.get_cookie():
+        if args['current_user']:
             #info = client.get('/account/verify_credentials')
             #nickname = info['screen_name']
-            nickname = client.get_cookie_username()
+            #nickname = client.get_cookie_username()
+            nickname = args['current_user'].name 
         else:
             nickname = "__anonymous"
-        
         new_token = libuser.join(nickname)
 
-        
+
 
         #case: gw close tab, 3 menit lalu RTO, trus buka lagi, nggak ada message " has joined the chat"
         #harusnya ada message "gw has left the chat (last_updated)"
@@ -114,30 +187,32 @@ class MainPage(webapp.RequestHandler):
         #gimana caranya mekanisme ping dibagian ngedelete zombie channel bisa di eksekusi lebih dulu
         #sebelum region dibawah ini jalan. solusi: pisahkan fungsi delete zombie channel di kelas ping
         #lalu panggil disini
-        
+
         if nickname != "__anonymous":
             usr_ch_count = len(libuser.getAliveUsers(username=nickname))
             if usr_ch_count == 1:
                 libchat.postSystemChat(nickname + " has joined the chat")
 
 
-        
 
-        output = template.render('index.html', {'new_nickname' : nickname, 'new_token' : new_token, 'arr_emo' : libchat.arr_emo})
+
+        output = template.render('index.html', {'new_nickname' : nickname, 'new_token' : new_token, 'arr_emo' : libchat.arr_emo, 'facebook_app_id' : FACEBOOK_APP_ID})
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
 
         self.response.out.write(output)
 
 application = webapp.WSGIApplication(
-                                     [
-                                      ('/_activeusersupdate',CronActiveUsersUpdate),
-                                      ('/_listaliveusers',ListAliveUsers),                                      
-                                      ('/ping', ClientPing),
-                                      ('/archive', ChatArchive),
-                                      ('/logout', ChatExit),
-                                      ('/chatpost', ChatPost),
-                                      ('/iframesample', IFrameSample),
-                                      ('/(.*)', MainPage)],
-                                     debug = True)
+        [
+            (r'/_activeusersupdate',CronActiveUsersUpdate),
+            (r'/_listaliveusers',ListAliveUsers),                                      
+            (r'/ping', ClientPing),
+            (r'/archive', ChatArchive),
+            (r'/logout', ChatExit),
+            (r'/chatpost', ChatPost),
+            (r'/iframesample', IFrameSample),
+            (r'/', MainPage)],
+
+        debug = True)
 
 def main():
     run_wsgi_app(application)
