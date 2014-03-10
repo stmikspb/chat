@@ -1,0 +1,87 @@
+<html>
+  <head>
+      <title>GDI Shoutbox</title>      
+      <script type="text/javascript" src="/_ah/channel/jsapi"></script>
+      <script language="javascript" type="text/javascript" src="/res/jquery.js"></script>
+      <script language="javascript" type="text/javascript" src="/res/jquerytimer.js"></script>    
+      <style type="text/css">
+          .chatbox{
+              border:1px solid black;
+              width:100%;
+              height:200px;
+              overflow:scroll;
+          }              
+      </style>  
+  </head>
+  <body>
+      <script language='javascript' type='text/javascript'>
+          var channel = new goog.appengine.Channel('{{ new_token }}');
+          var socket = channel.open()        
+          socket.onopen = function() {
+                // request chat list
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/chatpost', true);
+                xhr.send();
+                ping(); 
+          }        
+          socket.onmessage = function(evt) {
+              var data = JSON.parse(evt.data)
+              if(data.return_type == "chatlist"){
+                  $("#chatbox").html(data.data);
+                  var txtMsg = $("#frmChatMsg").find("#msg");
+                  var btnSubmit = $("#frmChatMsg").find("#submit");                  
+                  if(txtMsg.attr('disabled')==true){
+                    txtMsg.attr('disabled',false);
+                    btnSubmit.attr('disabled',false);
+                    txtMsg.attr('value',"");
+                  }
+              }
+              if(data.return_type == "userlist"){
+                  $("#userlistbox").html(data.data);                   
+              }
+          }
+          function ping(){
+              $.post('/ping',{token:'{{ new_token }}'}, function(data) {}); 
+          }
+          
+          $(document).ready(function(){
+              $("#frmChatMsg").find("#submit").click(function(e){
+                  e.preventDefault();
+                  var txtMsg = $("#frmChatMsg").find("#msg");
+                  var btnSubmit = $("#frmChatMsg").find("#submit");
+                  txtMsg.attr('disabled',true);
+                  btnSubmit.attr('disabled',true);                            
+                  if(txtMsg.attr('value')!=""){
+                      var usr = '{{ new_nickname }}'                                
+                      var msg = txtMsg.attr('value');                      
+                      var xhr = new XMLHttpRequest();
+                      xhr.open('POST', '/chatpost?sender={{ new_nickname }}&message=' + msg, true);
+                      xhr.send();     
+                  }                                          
+              });  
+              $(document).everyTime(10000, function(i) { // send ping every 10 secs
+                  ping();                        
+              });                              
+          });
+            
+      </script>
+      
+      <table width='100%' border='0' cellspacing='2' cellpadding='2'>
+        <tr>
+            <td width='75%'>
+                <div id="chatbox" class="chatbox">Loading chat...</div>
+            </td>
+            <td>
+                <div id="userlistbox" class="chatbox">Loading userlist...</div>
+            </td>
+        </tr>
+      </table>
+    
+    <form action="" method="post" id="frmChatMsg">
+      <div>
+          <input type="text" value="" id="msg" size="60" />
+          <input type="submit" value="Send" id="submit" /> <a href="/oauth/twitter/logout">Logout from Twitter</a>
+      </div>
+    </form>
+  </body>
+</html>

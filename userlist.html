@@ -1,0 +1,12 @@
+<div style="padding-left:5px;padding-top:5px;">
+{% for user in users %}
+    <a href='http://twitter.com/#!/{{ user.usr }}'><b>{{ user.usr }}</b></a> 
+    <span class='pdate'>({{ user.ch }})</span>
+    <br />
+{% endfor %}
+                  <hr />
+                    <small>
+                    Kalau gagal join, gunakan password GDI yang lama. Beberapa user baru belum diperbolehkan untuk join.<br /><br />
+                    Shoutbox masih dalam status BETA. Entry bisa dihapus tiap saat dan shoutbox bisa di take-down tiap saat. Enjoy.
+                    </small>
+</div>

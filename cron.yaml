@@ -1,0 +1,4 @@
+cron:
+- description: Update Alive Users
+  url: /_activeusersupdate
+  schedule: every 1 minutes

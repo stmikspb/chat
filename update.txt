@@ -1,0 +1,48 @@
+Todo:
+
+<div>
+        <b>GDI Shoutbox</b>
+        Murni buat shoutbox, entry nggak ke post ke twit anda, tidak puas uang kembali.<br />
+        Masih BETA, kadang2 down dan diganti2. Entry bisa terhapus setiap saat<hr />
+        
+        <b>Updates</b><br/>
+        20 Jam 2010
+        <ol>
+            <li>GDI Dark Theme</li>
+            <li>Switch ke  GDI Account</li>    
+        </ol>
+        19 Jan 2010
+        <ol>
+            <li>Smiley skrng pake popup</li>
+        </ol>
+        18 Jan 2010
+        <ol>
+            <li>Tambah hashtag twitter #hashtag</li>
+            <li>Tambah plurk emoticon, pakai :plemo_[emoticon]</li>
+            <li>Tambah secret emoticon, pakai :ss_[emoticon]</li>
+            <li>Emoticon default sb gdi dah dipasang</li>
+            <li>Tambah emoticon toolbar</li>
+            <li>Liat past chats bisa dari link archive diatas chatlist</li>
+            <li>Bisa parse url</li>
+            <li>Bisa mention pake @username</li>
+            <li>Tambah emo :kabur: :cizcuz:, emo lain nyusul</li>
+            <li>Tambah command :imgbin_[code]: buat nampilin gambar imgbin</li>
+            <li>Tambah command /me [pesan disini]</li>
+            <li>Tambah message (log out via twitter) klo link exit chat di klik</li>
+            <li>Anonymous dah bisa liat chat, tapi harus join untuk ikutan chat</li>
+            <li>Datetime dah di format dan sesuai timezone</li>
+            <li>Join/quit message udah diperbaiki, hanya jika semua channel user nggak ada, baru di post messagenya</li>
+        </ol>
+        17 Jan 2010
+        <ol>
+            <li>Ganti dari polling ke Channel API untuk koneksi yg lebih persistent dan hemat resource</li>
+            <li>Nambahin list user online</li>
+            <li>Limit nampilin chat entry sampe 30 latest</li>
+            <li>Channel exclusif, tiap channel yg nggak ngeping ke server bakal get out dari list user online</li>
+        </ol>
+        16 Jan 2010
+        <ol>
+            <li>Mulai bikin gdishoutbox, setup account twitter, appengine, bikin database, semua2 deh</li>
+        </ol>
+            
+    </div>
